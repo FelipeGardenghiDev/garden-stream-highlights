@@ -1,0 +1,8 @@
+{
+  "appId": "com.gardenghi.gardenstreamhighlights",
+  "appName": "Garden Stream Highlights",
+  "webDir": "dist",
+  "server": {
+    "androidScheme": "https"
+  }
+}

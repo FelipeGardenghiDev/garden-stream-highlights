@@ -2,3 +2,8 @@ node_modules/
 dist/
 .DS_Store
 *.local
+.gradle/
+android/app/build/
+android/build/
+android/.gradle/
+*.tsbuildinfo

@@ -6,14 +6,31 @@ export interface StreamHighlight {
   duration: number;
   intensityScore: number; // 0 a 100 baseado em desvio padrão de decibéis
   status: 'pending' | 'approved' | 'rejected';
-  title?: string;
+  title: string;
+  rmsValue?: number;
 }
 
 export interface HighlightDetectorOptions {
   windowSizeSec: number;        // Tamanho da janela RMS (ex: 0.5s)
-  thresholdMultiplier: number;  // Multiplicador de desvio padrão (ex: 2.5)
+  thresholdMultiplier: number;  // Multiplicador de desvio padrão (ex: 2.2)
   leadTimeSec: number;          // Segundos antes do pico (ex: 15s)
   trailTimeSec: number;         // Segundos depois do pico (ex: 25s)
-  minDurationSec: number;       // Mínimo de duração (ex: 20s)
+  minDurationSec: number;       // Mínimo de duração (ex: 15s)
   maxDurationSec: number;       // Máximo de duração (ex: 60s)
+  minGapBetweenClipsSec: number;// Espaçamento mínimo entre clipes (ex: 12s)
+}
+
+export interface AudioEnergyPoint {
+  timeSec: number;
+  rms: number;
+  db: number;
+  isPeak: boolean;
+}
+
+export interface HighlightsExportPackage {
+  projectName: string;
+  sourceDuration: number;
+  totalApproved: number;
+  clips: StreamHighlight[];
+  exportedAt: string;
 }
