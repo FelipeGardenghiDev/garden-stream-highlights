@@ -11,6 +11,30 @@ export const DEFAULT_DETECTOR_OPTIONS: HighlightDetectorOptions = {
 };
 
 /**
+ * Converts linear RMS value to Decibels relative to Full Scale (dBFS).
+ */
+export function calculateDecibelsFromRms(rms: number): number {
+  if (rms <= 0.00001) return -100;
+  return Number((20 * Math.log10(rms)).toFixed(1));
+}
+
+/**
+ * Calculates standard Z-Score (standard deviations from mean) for statistical anomaly detection.
+ */
+export function calculateZScore(value: number, mean: number, stdDev: number): number {
+  if (!stdDev || stdDev === 0) return 0;
+  return Number(((value - mean) / stdDev).toFixed(2));
+}
+
+/**
+ * Formats a threshold RMS into a human-readable dB readout (e.g. "-14.5 dBFS").
+ */
+export function formatDbThreshold(thresholdRms: number): string {
+  const db = calculateDecibelsFromRms(thresholdRms);
+  return `${db > -100 ? db.toFixed(1) : '-∞'} dBFS`;
+}
+
+/**
  * Decodes audio from a File / Blob using Web Audio API AudioContext.
  * 100% Free & Client-Side.
  */
@@ -50,7 +74,7 @@ export function analyzeAudioEnergy(
       sumSquares += sample * sample;
     }
     const rms = Math.sqrt(sumSquares / windowSamples);
-    const db = rms > 0.00001 ? 20 * Math.log10(rms) : -100;
+    const db = calculateDecibelsFromRms(rms);
     const timeSec = (w * windowSamples) / sampleRate;
 
     energyPoints.push({

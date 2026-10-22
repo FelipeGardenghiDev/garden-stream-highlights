@@ -1,6 +1,6 @@
 # 🌿 Garden Stream Highlights
 
-> **Detector Inteligente de Melhores Momentos & Cortador de Clipes de Lives (VODs de 1h a 4h)** com análise acústica de picos de emoção/gritos, telemetria de chat e exportação direta para a timeline do **GardenCut**.
+> **Detector Inteligente de Melhores Momentos & Cortador de Clipes de Lives (VODs de 1h a 4h)** com análise acústica de picos de emoção/gritos baseada em Z-Score e decibéis (dBFS), telemetria de chat, pré-visualizador de clipes e exportação direta para a timeline do **GardenCut**.
 
 [![Part of GC Studio](https://img.shields.io/badge/Part%20of-GC%20Studio%20%2F%20Garden%20Apps-06B6D4?style=flat-square)](https://github.com/FelipeGardenghiDev/gcstudio)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.0+-3178C6?style=flat-square&logo=typescript)](https://www.typescriptlang.org/)
@@ -15,10 +15,18 @@ Streamers na Twitch, YouTube e Kick transmitem de 2 a 6 horas por dia. O trabalh
 
 O **Garden Stream Highlights automatiza essa mineração no próprio navegador**:
 * **Varredura Acústica de Picos (Acoustic Excitement Detection):** Analisa a forma de onda do áudio procurando subidas súbitas de energia sonora (gritos, risadas intensas, sustos e comemorações) com janelas de análise configuráveis.
+* **Ajuste de Sensibilidade Z-Score & Leitura em dBFS:** Controle fino do multiplicador estatístico de desvio padrão ($\sigma$) com leitura em tempo real do limiar sonoro estimado em decibéis.
 * **Mapa de Calor da Live (Highlight Heatmap):** Exibe uma linha do tempo completa da live colorida por intensidade dramática (azul para calmo, amarelo para engajamento e vermelho para picos épicos).
 * **Fatiador com Janela Inteligente:** Ao detectar um pico no segundo 1.450, o software recorta automaticamente do segundo 1.435 ao 1.475 (15 segundos antes para dar contexto e 25 segundos depois para mostrar o desfecho).
 * **Pré-visualização Rápida:** Player com scrubber veloz para aprovar ou descartar clipes com atalhos de teclado (<kbd>A</kbd> para aprovar, <kbd>D</kbd> para descartar).
 * **Exportação em 1 Clique para o GardenCut:** Envia a lista de clipes aprovados direto para a timeline do [GardenCut](https://github.com/FelipeGardenghiDev/garden-cut) para aplicar legendas cinéticas do **Garden Subtitle** e reenquadramento vertical do **Garden Auto-Framer**.
+
+---
+
+## 🚀 Deploy Web & Aplicativo Android (APK)
+
+* **Web App (GitHub Pages):** [felipegardenghidev.github.io/garden-stream-highlights](https://felipegardenghidev.github.io/garden-stream-highlights/)
+* **Download do APK Android:** A cada commit na branch principal, o GitHub Actions compila automaticamente o APK nativo através do pipeline Capacitor + Gradle e disponibiliza o artefato `garden-stream-highlights-debug-apk` para download direto na aba **Actions** do repositório, dispensando o Android Studio na máquina local.
 
 ---
 
@@ -32,8 +40,8 @@ flowchart TD
 
     subgraph AudioEngine ["Processamento de Sinal de Áudio"]
         OFFLINE_CTX["OfflineAudioContext (Decodificação Fast-Forward)"]
-        RMS["Calculador RMS & Energy Envelope"]
-        PEAKS["PeakAnomalyDetector (Desvio Padrão > 2.5σ)"]
+        RMS["Calculador RMS & Decibéis dBFS"]
+        PEAKS["PeakAnomalyDetector (Z-Score > 2.2σ)"]
     end
 
     subgraph Visualizer ["Interface do Streamer"]

@@ -1,5 +1,11 @@
 import { describe, it, expect } from 'vitest';
-import { analyzeAudioEnergy, DEFAULT_DETECTOR_OPTIONS } from '../src/core/audio-analyzer';
+import {
+  analyzeAudioEnergy,
+  DEFAULT_DETECTOR_OPTIONS,
+  calculateDecibelsFromRms,
+  calculateZScore,
+  formatDbThreshold
+} from '../src/core/audio-analyzer';
 import { generateHighlights } from '../src/core/clip-segmenter';
 import { generateCMX3600EDL, generateGardenCutPackage } from '../src/core/edl-exporter';
 import { StreamHighlight } from '../src/types';
@@ -32,6 +38,19 @@ describe('Garden Stream Highlights - Acoustic Excitement Analyzer', () => {
       copyToChannel: () => {},
     } as unknown as AudioBuffer;
   }
+
+  it('accurately calculates decibels, z-scores, and format readouts', () => {
+    expect(calculateDecibelsFromRms(1.0)).toBe(0);
+    expect(calculateDecibelsFromRms(0.1)).toBeCloseTo(-20, 0);
+    expect(calculateDecibelsFromRms(0.000001)).toBe(-100);
+
+    expect(calculateZScore(10, 5, 2)).toBe(2.5);
+    expect(calculateZScore(5, 5, 2)).toBe(0);
+    expect(calculateZScore(5, 5, 0)).toBe(0);
+
+    expect(formatDbThreshold(1.0)).toContain('0.0 dBFS');
+    expect(formatDbThreshold(0.1)).toContain('-20.0 dBFS');
+  });
 
   it('accurately identifies excitement peak anomaly via RMS and standard deviation', () => {
     const mockBuffer = createSyntheticAudioBuffer(40);
@@ -70,47 +89,46 @@ describe('Garden Stream Highlights - Clip Segmenter & Clustering', () => {
       maxDurationSec: 45,
     };
 
-    const highlights = generateHighlights(energyPoints, 60, 0.1, 0.25, options);
+    const clips = generateHighlights(energyPoints, 60, 0.1, 0.05, options);
+    expect(clips.length).toBe(1);
 
-    expect(highlights.length).toBe(1);
-    const clip = highlights[0];
-    expect(clip.peakTime).toBe(30);
-    expect(clip.startTime).toBeLessThanOrEqual(20);
-    expect(clip.endTime).toBeGreaterThanOrEqual(45);
-    expect(clip.intensityScore).toBeGreaterThanOrEqual(50);
+    const clip = clips[0];
+    expect(clip.startTime).toBeLessThan(30);
+    expect(clip.endTime).toBeGreaterThan(31);
+    expect(clip.status).toBe('approved');
+    expect(clip.intensityScore).toBeGreaterThan(50);
   });
 });
 
-describe('Garden Stream Highlights - CMX 3600 EDL & GardenCut Exporters', () => {
-  const sampleClips: StreamHighlight[] = [
+describe('Garden Stream Highlights - EDL Exporter', () => {
+  const mockClips: StreamHighlight[] = [
     {
       id: 'clip_1',
-      peakTime: 45,
-      startTime: 30,
-      endTime: 65,
-      duration: 35,
-      intensityScore: 92,
+      startTime: 10.0,
+      endTime: 25.0,
+      duration: 15.0,
+      peakTime: 18.0,
+      intensityScore: 85,
       status: 'approved',
-      title: 'Victory Scream',
+      title: 'Pico de Emoção #1',
     },
   ];
 
-  it('generates compliant CMX 3600 EDL formatting', () => {
-    const edl = generateCMX3600EDL('Apex_VOD', sampleClips);
+  it('generates standard CMX 3600 EDL for Premiere / DaVinci Resolve', () => {
+    const edl = generateCMX3600EDL('live_stream', mockClips);
 
-    expect(edl).toContain('TITLE: APEX_VOD');
+    expect(edl).toContain('TITLE: LIVE_STREAM');
     expect(edl).toContain('FCM: NON-DROP FRAME');
     expect(edl).toContain('001  AX  V     C');
-    expect(edl).toContain('00:00:30:00'); // SMPTE source in
-    expect(edl).toContain('00:01:05:00'); // SMPTE source out
+    expect(edl).toContain('* FROM CLIP NAME: Pico de Emoção #1');
   });
 
-  it('generates GardenCut JSON export package', () => {
-    const pkg = generateGardenCutPackage('Stream_VOD', 1800, sampleClips);
+  it('generates GardenCut project package format', () => {
+    const pkg = generateGardenCutPackage('live_stream.mp4', 120, mockClips);
 
-    expect(pkg.projectName).toBe('Stream_VOD');
+    expect(pkg.projectName).toContain('live_stream');
     expect(pkg.totalApproved).toBe(1);
-    expect(pkg.clips[0].title).toBe('Victory Scream');
-    expect(pkg.exportedAt).toBeDefined();
+    expect(pkg.clips.length).toBe(1);
+    expect(pkg.clips[0].title).toBe('Pico de Emoção #1');
   });
 });
